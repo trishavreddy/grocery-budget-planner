@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import Login from './Login';
 import Register from './Register';
+import SpendingChart from './SpendingChart';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -14,6 +15,7 @@ function App() {
   const [form, setForm] = useState({ name: '', price: '', unit: '' });
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const [weeklyBudget, setWeeklyBudget] = useState(100);
 
   const getAuthHeaders = () => ({
     'Content-Type': 'application/json',
@@ -175,6 +177,19 @@ function App() {
           <button type="submit" disabled={formLoading}>Add Ingredient</button>
           {formError && <div style={{ color: 'red', marginTop: 8 }}>{formError}</div>}
         </form>
+
+        <div style={{ marginTop: 30, maxWidth: 350 }}>
+          <h3>Set Weekly Budget</h3>
+          <input
+            type="number"
+            value={weeklyBudget}
+            onChange={(e) => setWeeklyBudget(parseFloat(e.target.value) || 0)}
+            placeholder="Weekly budget"
+            style={{ width: '100%', padding: 10 }}
+          />
+        </div>
+
+        <SpendingChart ingredients={ingredients} budget={weeklyBudget} />
       </header>
     </div>
   );
