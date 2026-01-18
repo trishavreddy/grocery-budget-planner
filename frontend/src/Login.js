@@ -34,12 +34,13 @@ function Login({ onLogin, onSwitchToRegister }) {
   };
 
   return (
-    <div style={{ maxWidth: 350, margin: '50px auto', padding: 20 }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className="auth-card">
+      <h1>Welcome Back</h1>
+      <p className="subtitle">Sign in to your account</p>
+      <form onSubmit={handleSubmit}>
         <input
           type="email"
-          placeholder="Email"
+          placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
@@ -51,16 +52,14 @@ function Login({ onLogin, onSwitchToRegister }) {
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
         />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? 'Signing in...' : 'Sign In'}
         </button>
-        {error && <div style={{ color: 'red' }}>{error}</div>}
+        {error && <div className="error-message">{error}</div>}
       </form>
-      <p style={{ marginTop: 20 }}>
+      <p className="switch-link">
         Don't have an account?{' '}
-        <button onClick={onSwitchToRegister} style={{ background: 'none', border: 'none', color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}>
-          Register
-        </button>
+        <button onClick={onSwitchToRegister}>Create one</button>
       </p>
     </div>
   );
