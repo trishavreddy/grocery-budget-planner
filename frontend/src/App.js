@@ -19,6 +19,7 @@ function App() {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [weeklyBudget, setWeeklyBudget] = useState(100);
+  const [editingId, setEditingId] = useState(null);
 
   const getAuthHeaders = () => ({
     'Content-Type': 'application/json',
@@ -73,6 +74,37 @@ function App() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    setForm({ name: '', price: '', unit: '' });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const openEditModal = (ingredient) => {
+    setEditingId(ingredient.id);
+    setForm({ name: ingredient.name, price: ingredient.price.toString(), unit: ingredient.unit });
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const handleDelete = (id) => {
+    if (!window.confirm('Are you sure you want to delete this ingredient?')) return;
+    fetch(`http://127.0.0.1:5000/api/ingredients/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+      .then(res => {
+        if (res.status === 401) {
+          handleLogout();
+          throw new Error('Session expired');
+        }
+        if (!res.ok) throw new Error('Failed to delete');
+        setIngredients(prev => prev.filter(ing => ing.id !== id));
+      })
+      .catch(err => setError(err.message));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setFormError('');
@@ -81,8 +113,14 @@ function App() {
       return;
     }
     setFormLoading(true);
-    fetch('http://127.0.0.1:5000/api/ingredients', {
-        method: 'POST',
+
+    const url = editingId
+      ? `http://127.0.0.1:5000/api/ingredients/${editingId}`
+      : 'http://127.0.0.1:5000/api/ingredients';
+    const method = editingId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method,
         headers: getAuthHeaders(),
         body: JSON.stringify({
           name: form.name,
@@ -98,13 +136,22 @@ function App() {
         const data = await res.json();
         setFormLoading(false);
         if (!res.ok) {
-          setFormError(data.error || 'Failed to add ingredient.');
+          setFormError(data.error || `Failed to ${editingId ? 'update' : 'add'} ingredient.`);
           return;
         }
-        setIngredients(prev => [...prev, {
-          id: data.id, name: form.name, price: parseFloat(form.price), unit: form.unit
-        }]);
+        if (editingId) {
+          setIngredients(prev => prev.map(ing =>
+            ing.id === editingId
+              ? { id: data.id, name: data.name, price: data.price, unit: data.unit }
+              : ing
+          ));
+        } else {
+          setIngredients(prev => [...prev, {
+            id: data.id, name: form.name, price: parseFloat(form.price), unit: form.unit
+          }]);
+        }
         setForm({ name: '', price: '', unit: '' });
+        setEditingId(null);
         setShowModal(false);
       })
       .catch(err => {
@@ -169,7 +216,7 @@ function App() {
             <>
               <div className="inventory-header">
                 <h2>Ingredients ({ingredients.length})</h2>
-                <button className="btn-add" onClick={() => setShowModal(true)}>
+                <button className="btn-add" onClick={openAddModal}>
                   + Add Ingredient
                 </button>
               </div>
@@ -190,6 +237,10 @@ function App() {
                     <h3>{ing.name}</h3>
                     <div className="price">${ing.price.toFixed(2)}</div>
                     <div className="unit">per {ing.unit}</div>
+                    <div className="card-actions">
+                      <button className="btn-edit" onClick={() => openEditModal(ing)}>Edit</button>
+                      <button className="btn-delete" onClick={() => handleDelete(ing.id)}>Delete</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -220,7 +271,7 @@ function App() {
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal" onClick={e => e.stopPropagation()}>
-              <h3>Add New Ingredient</h3>
+              <h3>{editingId ? 'Edit Ingredient' : 'Add New Ingredient'}</h3>
               <form onSubmit={handleSubmit}>
                 <input
                   type="text"
@@ -253,7 +304,7 @@ function App() {
                     Cancel
                   </button>
                   <button type="submit" className="btn-save" disabled={formLoading}>
-                    {formLoading ? 'Adding...' : 'Add'}
+                    {formLoading ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save' : 'Add')}
                   </button>
                 </div>
               </form>

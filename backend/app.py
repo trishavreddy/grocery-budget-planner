@@ -122,6 +122,25 @@ def get_ingredient(id):
         return jsonify({'error': 'Not found'}), 404
     return jsonify({'id': ing.id, 'name': ing.name, 'price': ing.price, 'unit': ing.unit})
 
+@app.route('/api/ingredients/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_ingredient(id):
+    ing = Ingredient.query.get(id)
+    if not ing:
+        return jsonify({'error': 'Not found'}), 404
+    data = request.get_json()
+    if 'name' in data:
+        existing = Ingredient.query.filter_by(name=data['name']).first()
+        if existing and existing.id != id:
+            return jsonify({'error': 'Ingredient with this name already exists'}), 400
+        ing.name = data['name']
+    if 'price' in data:
+        ing.price = float(data['price'])
+    if 'unit' in data:
+        ing.unit = data['unit']
+    db.session.commit()
+    return jsonify({'success': True, 'id': ing.id, 'name': ing.name, 'price': ing.price, 'unit': ing.unit})
+
 @app.route('/api/ingredients/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_ingredient(id):
